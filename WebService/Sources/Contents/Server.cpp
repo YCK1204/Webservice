@@ -1,14 +1,22 @@
-#include "../../Headers/Http.hpp"
+#include "../../Headers/Contents/Http.hpp"
+#include "../../Headers/Utils/Utils.hpp"
+#include <cstring>
+#include <sys/socket.h>
 
-Server::Server() { port = 0; }
+Server::Server() {
+  memset(&members, 0, sizeof(SERVER_MEMBER));
+  members.port = 0;
+  members.rootPath = "";
+}
 Server::~Server() {}
-int Server::GetPort() const { return port; }
-long Server::GetSize() const { return clientBodySize; }
-const string Server::GetName() const { return serverName; }
-const string Server::GetIndexPath() const { return defaultIndexPath; }
-const string Server::GetErrorPath() const { return errorPagePath; }
-const string Server::GetHost() const { return host; }
-const string Server::GetRootPath() const { return rootPath; }
+int Server::GetPort() const { return members.port; }
+long Server::GetSize() const { return members.clientBodySize; }
+const string Server::GetName() const { return members.serverName; }
+const string Server::GetIndexPath() const { return members.indexPath; }
+const string Server::GetErrorPath() const { return members.errorPagePath; }
+const string Server::GetHost() const { return members.host; }
+const string Server::GetRootPath() const { return members.rootPath; }
+int Server::GetSocket() const { return sock; }
 const Location Server::GetLocation(const string path) {
   vector<Location> location = GetLocation();
   Location ret;
@@ -25,11 +33,38 @@ const Location Server::GetLocation(const string path) {
 }
 vector<Location> Server::GetLocation() { return locations; }
 
-void Server::SetPort(const int port) { this->port = port; }
-void Server::SetSize(const long size) { clientBodySize = size; }
-void Server::SetName(const string name) { serverName = name; }
-void Server::SetIndexPath(const string path) { defaultIndexPath = path; }
-void Server::SetErrorPath(const string path) { errorPagePath = path; }
-void Server::SetHost(const string host) { this->host = host; }
-void Server::SetRootPath(const string path) { this->rootPath = path; }
+void Server::SetServer() {
+  int servSocket = socket(AF_INET, SOCK_STREAM, 0);
+  if (servSocket < 0)
+    SetServerFuncFailed(members.port, "socket func Failed");
+
+  sock = servSocket;
+  struct sockaddr_in serv_adr;
+
+  memset(&serv_adr, 0, sizeof(serv_adr));
+  serv_adr.sin_family = AF_INET;
+  serv_adr.sin_addr.s_addr = inet_addr(GetHost().c_str());
+  serv_adr.sin_port = htons(GetPort());
+  SetAddr(serv_adr);
+
+  int t = 1;
+  if ((setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &t, sizeof(t))) == -1)
+    SetServerFuncFailed(members.port, "setsockopt func Failed");
+  if (::bind(sock, (struct sockaddr *)&serv_adr, sizeof(serv_adr)) == -1)
+    SetServerFuncFailed(members.port, "bind func Failed");
+  if (listen(sock, MAX_CLIENT_SIZE) == -1)
+    SetServerFuncFailed(members.port, "listen func Failed");
+
+  if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
+    SetServerFuncFailed(members.port, "fcntl()");
+}
+
+void Server::SetAddr(struct sockaddr_in &addr) { this->addr = addr; }
+void Server::SetPort(const int port) { members.port = port; }
+void Server::SetSize(const long size) { members.clientBodySize = size; }
+void Server::SetName(const string name) { members.serverName = name; }
+void Server::SetIndexPath(const string path) { members.indexPath = path; }
+void Server::SetErrorPath(const string path) { members.errorPagePath = path; }
+void Server::SetHost(const string host) { members.host = host; }
+void Server::SetRootPath(const string path) { members.rootPath = path; }
 void Server::AddLocation(Location &location) { locations.push_back(location); }

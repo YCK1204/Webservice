@@ -1,14 +1,34 @@
-#include "../../Headers/Http.hpp"
+#include "../../Headers/Contents/Http.hpp"
+Location::Location() {
+  memset(&members, 0, sizeof(LOCATION_MEMBER));
+
+  members.domainPath = "-";
+  members.rootPath = "";
+  members.indexPath = "";
+  members.isAutoIndex = false;
+  members.methods[GET] = true;
+  members.methods[POST] = true;
+  members.methods[DELETE] = true;
+}
 Location::~Location() {}
 
-const string Location::GetRootPath() const { return rootPath; }
-const string Location::GetIndexPath() const { return indexPath; }
-const string Location::GetReturnPath() const { return returnPath; }
-bool Location::GetIsAutoIndex() const { return isAutoIndex; }
-bool Location::GetMethod(unsigned short i) const { return methods[i]; }
+const string Location::GetDomainPath() const { return members.domainPath; }
+const string Location::GetIndexPath() const { return members.indexPath; }
+const string Location::GetReturnPath() const { return members.returnPath; }
+bool Location::GetIsAutoIndex() const { return members.isAutoIndex; }
+const string Location::GetRootPath() const { return members.rootPath; }
+bool Location::GetMethod(unsigned short i) const { return members.methods[i]; }
+const string Location::GetCgiPath() const { return members.cgiPath; }
 
-void Location::SetRootPath(const string path) { rootPath = path; }
-void Location::SetIndexPath(const string path) { indexPath = path; }
-void Location::SetReturnPath(const string path) { returnPath = path; }
-void Location::SetIsAutoIndex(const bool f) { isAutoIndex = f; }
-void Location::SetMethod(METHOD m, const bool f) { methods[m] = f; }
+void Location::SetDomainPath(const string path) { members.domainPath = path; }
+void Location::SetIndexPath(const string path) { members.indexPath = path; }
+void Location::SetReturnPath(const string path) { members.returnPath = path; }
+void Location::SetCgiPath(const string path) { members.cgiPath = path; }
+void Location::SetRootPath(const string path) { members.rootPath = path; }
+void Location::SetIsAutoIndex(const bool f) { members.isAutoIndex = f; }
+void Location::SetMethod(METHOD m, const bool f) { members.methods[m] = f; }
+void Location::ClearMethod() {
+  members.methods[GET] = false;
+  members.methods[POST] = false;
+  members.methods[DELETE] = false;
+}

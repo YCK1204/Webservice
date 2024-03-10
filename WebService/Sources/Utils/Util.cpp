@@ -1,4 +1,5 @@
-#include "../../Headers/Utils.hpp"
+#include "../../Headers/Exception.hpp"
+#include "../../Headers/Utils/Utils.hpp"
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 
@@ -29,6 +30,10 @@ bool IsRemaingString(stringstream &ss) {
 
   if (str[0] == '#')
     return false;
+  if (!str.compare("{")) {
+    str.clear();
+    ss >> str;
+  }
   return !str.empty();
 }
 
@@ -40,13 +45,12 @@ string IntToString(int n) {
   while ((tmp /= 10))
     len++;
 
-  for (int i = len - 1; i >= 0; i++) {
+  for (int i = len - 1; i >= 0; i--) {
     string a;
-    a[0] = n % 10 + '0';
+    a += n % 10 + '0';
     ret.insert(0, a);
     n /= 10;
   }
-
   return ret;
 }
 
@@ -54,11 +58,50 @@ bool IsExistFolder(string path) {
   DIR *dir;
 
   dir = opendir(path.c_str());
-  return dir != NULL;
+  if (dir != NULL) {
+    closedir(dir);
+    return true;
+  }
+  return false;
 }
 
 bool IsExistFile(string path) {
   ifstream file(path);
 
-  return file.is_open();
+  if (IsExistFolder(path))
+    return false;
+  if (file.is_open()) {
+    file.close();
+    return true;
+  }
+  return false;
+}
+
+string ExtractWithComments(stringstream &ss) {
+  string ret;
+
+  ss >> ret;
+
+  size_t i = ret.find('#');
+  if (i != string::npos)
+    ret = ret.substr(0, i);
+  return ret;
+}
+
+string ExtractWithComments(string str) {
+  size_t i = str.find('#');
+  if (i != string::npos)
+    str = str.substr(0, i);
+  return str;
+}
+
+void CheckValidServer(const Server &serv) {
+  if (serv.GetPort() == 0)
+    IsNotValidServer(serv.GetPort(), "Port has to be set");
+  if (serv.GetRootPath().empty())
+    IsNotValidServer(serv.GetPort(), "Root path has to be set");
+  if (serv.GetIndexPath().empty())
+    IsNotValidServer(serv.GetPort(), "Index path has to be set");
+  if (serv.GetHost().empty())
+    IsNotValidServer(serv.GetPort(), "Host address has to be set");
 }

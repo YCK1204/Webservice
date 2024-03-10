@@ -6,7 +6,9 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <netinet/in.h>
 #include <string>
+#include <sys/_types/_fd_def.h>
 #include <vector>
 using namespace std;
 
@@ -15,19 +17,16 @@ class Location;
 class Server {
 
 private:
-  int port;
-  long clientBodySize;
-  string serverName;
-  string defaultIndexPath;
-  string errorPagePath;
-  string host;
-  string rootPath;
+  int sock;
+  SERVER_MEMBER members;
+  struct sockaddr_in addr;
   vector<Location> locations;
 
 public:
   Server();
   ~Server();
   int GetPort() const;
+  int GetSocket() const;
   long GetSize() const;
   const string GetName() const;
   const string GetIndexPath() const;
@@ -45,6 +44,8 @@ public:
   void SetHost(const string host);
   void SetRootPath(const string path);
   void AddLocation(Location &location);
+  void SetServer();
+  void SetAddr(struct sockaddr_in &addr);
 };
 
 #endif

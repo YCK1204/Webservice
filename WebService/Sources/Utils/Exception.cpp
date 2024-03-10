@@ -1,4 +1,5 @@
 #include "../../Headers/Exception.hpp"
+#include "../../Headers/Utils/Utils.hpp"
 
 CustomException::CustomException(const string msg) { errorMsg = msg; }
 
@@ -8,10 +9,16 @@ const char *CustomException::what() const throw() { return errorMsg.c_str(); }
 
 void webserv::ThrowException(const string &file, int line,
                              const string &message) {
-  cerr << file << ":" << line << " " + message << endl;
+  cerr << file << ":" << line << " " << message << endl;
 }
 
-void serverFunctionExecuteFailed(string msg, string detail) {
-  FT_THROW(msg + "[" + static_cast<const string>(strerror(errno)) + "]",
+void SetServerFuncFailed(int port, string detail) {
+  FT_THROW("Set " + IntToString(port) + " Port Server Failed " + "[" +
+               static_cast<const string>(strerror(errno)) + "]",
+           CustomException(detail));
+}
+
+void IsNotValidServer(int port, string detail) {
+  FT_THROW(IntToString(port) + " Port server member variable has not been set ",
            CustomException(detail));
 }

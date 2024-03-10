@@ -6,9 +6,6 @@
 #include <string>
 using namespace std;
 
-// _LIBCPP_INLINE_VISIBILITY exception() _NOEXCEPT {}
-// virtual ~exception() _NOEXCEPT;
-// virtual const char *what() const _NOEXCEPT;
 class CustomException : public exception {
 private:
   string errorMsg;
@@ -28,5 +25,6 @@ public:
 namespace webserv {
 void ThrowException(const string &file, int line, const string &message);
 }
-
+void SetServerFuncFailed(int port, string detail);
+void IsNotValidServer(int port, string detail);
 #endif

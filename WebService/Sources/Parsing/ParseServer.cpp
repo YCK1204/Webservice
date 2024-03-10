@@ -1,40 +1,40 @@
-#include "../../Headers/Http.hpp"
+#include "../../Headers/Contents/Http.hpp"
 
 bool IsValidHost(string host) {
-  size_t i = 0;
+  size_t i = 0, start = 0;
   bool success = true;
   int cnt = 0;
 
   while (true) {
     string num;
-    i = host.find(".");
+    i = host.find(".", i);
 
     if (i == string::npos) {
-      num = host.substr(i, host.length() - i);
+      num = host.substr(start, i - start);
       int n = atoi(num.c_str());
       success &= (0 <= n && n <= 255);
       break;
     }
-    num = host.substr(i, host.length() - i);
+    num = host.substr(start, i - start);
     int n = atoi(num.c_str());
     success &= (0 <= n && n <= 255);
     cnt++;
+    i++;
+    start = i;
   }
   success &= (cnt == 3);
   return success;
 }
 
-void ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
+bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
   string first, second;
   bool success = true;
 
-  ss >> first;
-  ss >> second;
+  first = ExtractWithComments(ss);
+  second = ExtractWithComments(ss);
 
   if (first[0] == '#') {
-    return;
-  } else if (!first.compare("server")) {
-    success &= second.compare("{");
+    return true;
   } else if (!first.compare("listen")) {
     serv.SetPort(atoi(second.c_str()));
     int port = serv.GetPort();
@@ -58,12 +58,16 @@ void ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
     serv.SetHost(second);
     success &= IsValidHost(second);
   } else if (!first.compare("location")) {
+    Location location;
+    location = ParseLocation(ss, f, serv.GetRootPath(), second);
+    if (location.GetIndexPath().empty())
+      location.SetIndexPath(serv.GetIndexPath());
+    serv.AddLocation(location);
   } else {
-    FT_THROW("Is Not vaild server member (" + first +
-                 "), Line : " + IntToString(numOfLine),
-             ERR_CONF);
+    return false;
   }
   success &= !IsRemaingString(ss);
+  return success;
 }
 
 Server ParseServer(fstream &f) {
@@ -71,12 +75,23 @@ Server ParseServer(fstream &f) {
   string line;
 
   while (!f.eof()) {
+    numOfLine++;
     getline(f, line);
-    line = StringToLower(trim(line));
+    line = trim(ExtractWithComments(line));
+
+    if (line.empty())
+      continue;
+
+    if (!line.compare("}"))
+      break;
 
     stringstream ss(line);
-    ParseServerMember(ss, f, ret);
-    numOfLine++;
+
+    if (!ParseServerMember(ss, f, ret)) {
+      FT_THROW("Is Not vaild server member ( " + line +
+                   " ), Line : " + IntToString(numOfLine),
+               ERR_CONF);
+    }
   }
   return ret;
 }
