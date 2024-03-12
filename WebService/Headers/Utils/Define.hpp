@@ -2,14 +2,24 @@
 #define DEFINE_HPP
 
 #include <string>
+#include <sys/_types/_fd_def.h>
 
 #define MAX_CLIENT_BODY_SIZE 4096
 #define MAX_CLIENT_SIZE 20
 #define BUFFER_SIZE 2048
+#define TIMEOUT 1
+#define REQUEST_INTERVAL 2
+#define MAX_REQUEST_CNT 10
+#define MAX_ROOT_LEN 20
 
 #define CONF_PATH "./Config/default.conf"
-#define ERR_CONF "Error : Config File"
+#define ERR_CONF "Error : Config FileStream"
 #define ERR_SYS_FUNC "Error : System function failed"
+
+extern int maxFd;
+extern int numOfLine;
+extern unsigned short responseStatus;
+extern fd_set event;
 
 using namespace std;
 
@@ -18,6 +28,20 @@ typedef enum {
   POST,
   DELETE,
 } METHOD;
+
+typedef enum {
+  NONE,
+  READ,
+  WRITE,
+  ERROR,
+} CLIENT_STATE;
+
+typedef enum {
+  AUTOINDEX,
+  REDIRECTION,
+  ERR,
+  NORMAL,
+} RESPONSE_STATE;
 
 typedef struct {
   int port;
@@ -39,12 +63,6 @@ typedef struct {
   bool methods[3];
 } LOCATION_MEMBER;
 
-typedef enum {
-  ERROR,
-  READ,
-  WRITE,
-} CLIENT_STATE;
-
 typedef struct {
   string display;
   string result;
@@ -58,31 +76,35 @@ typedef struct {
 } Image;
 
 typedef struct {
+  string total;
+  string header;
+  string body;
+  string line;
+  string method;
+  string root;
+} Request;
+
+typedef struct {
   int fd;
   int port;
-  int addr[4];
-  int request_cnt;
+  int reqCnt;
 
   CLIENT_STATE state;
-  bool at;
+  RESPONSE_STATE responseState;
+
   bool set_cookie;
   bool delete_cookie;
 
-  string root;
+  string addr;
   string http;
-  string cookie;
-  string method;
-  string request;
+  Request request;
   string redirect;
-  string http_ver;
-  string connection;
-  string body_method;
-  string body_request;
-  string file_extension;
+  string httpVer;
+  string fileExtension;
 
-  size_t str_len;
-  size_t body_size;
-  time_t last_active_times;
+  size_t requestSize;
+  size_t bodySize;
+  time_t lastActTime;
 
   Image img;
   Calculator cal;

@@ -1,12 +1,54 @@
 #include "../../Headers/Contents/Http.hpp"
-#include "../../Headers/Utils/Utils.hpp"
-#include <sys/socket.h>
-#include <vector>
+#include "../../Headers/Utils/Util.hpp"
 
-Http::Http(const string confPath) {
+vector<Client> ClientManager::clients;
+map<string, string> ResponseManager::type;
+map<int, string> ResponseManager::status;
+
+Http::Http() {
+  html = "<!DOCTYPE html>\
+<html>\
+  <head>\
+    {1}\
+  </head>\
+  <body>\
+    {2}\
+  </body>\
+</html>";
+
+  responseMsgHeaders = "HTTP/1.1 {1} {2}\r\n\
+Accept-language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7\r\n\
+Cache-Control:no-cache=Set-Cookie\r\n\
+Connection: keep-alive\r\n\
+Content-Length: text/html\r\n\
+Content-Type: {3}; charset=utf-8\r\n\
+Date: {4}\r\n\
+keep-alive: timeout= {5}, max= {6}\r\n\
+Last-Modified: {7}\r\n\
+";
+
+  // Server:   server.getServerName()  \\r\\n\\r;
+  //   if (clients[clnt_sock].set_cookie)
+  // createCookie(clnt_sock);
+  //   else if (clients[clnt_sock].delete_cookie)
+  // deleteCookie();
+
+  // Location:
+  //   location.getRedirect()  \\r;
+  // Location:
+  //   clients[clnt_sock].root  \\r;
+  //   else if (!clients[clnt_sock].redirect.empty()) Location :
+  //   +clients[clnt_sock]
+  //                                                                 .redirect +
+  //                                                                 \\r;
+}
+
+void Http::StartWebService(const string confPath) {
   file.SetFile(confPath);
 
   numOfLine = 0;
+  maxFd = 0;
+  responseStatus = 0;
   if (file.ExistFile()) {
     while (!file.IsEof()) {
       string line;
@@ -22,8 +64,6 @@ Http::Http(const string confPath) {
   } else {
     FT_THROW("Is not exist config file (" + confPath + ")", ERR_CONF);
   }
-  // PrintConfig(*this);
-  // run server
   if (servers.size() > 0) {
     SetServers();
     RunServers();
@@ -31,23 +71,21 @@ Http::Http(const string confPath) {
 }
 
 void Http::SetServers() {
-  vector<Server> server;
-
   FD_ZERO(&event);
-  for (vector<Server>::iterator it = server.begin(); it != server.end(); it++) {
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
+       it++) {
     it->SetServer();
     FD_SET(it->GetSocket(), &event);
     maxFd = it->GetSocket();
   }
 }
 
-const Server Http::GetServer(unsigned short port) {
-  vector<Server> server = GetServer();
+const Server Http::GetServer(unsigned short sock) {
   Server ret;
 
-  for (vector<Server>::iterator it = server.begin(); it != servers.end();
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
        it++) {
-    if (it->GetPort() == port) {
+    if (it->GetSocket() == sock) {
       ret = *it;
       break;
     }
@@ -55,13 +93,12 @@ const Server Http::GetServer(unsigned short port) {
   return ret;
 }
 
-const Server Http::GetServer(int sock) {
-  vector<Server> server = GetServer();
+const Server Http::GetServer(int port) {
   Server ret;
 
-  for (vector<Server>::iterator it = server.begin(); it != servers.end();
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
        it++) {
-    if (it->GetSocket() == sock) {
+    if (it->GetPort() == port) {
       ret = *it;
       break;
     }
@@ -72,49 +109,48 @@ const Server Http::GetServer(int sock) {
 void Http::RunServers() {
   struct timeval timer;
 
-  timer.tv_sec = 1;
+  timer.tv_sec = 2;
   timer.tv_usec = 0;
   while (true) {
     readEvent = event;
+    writeEvent = event;
     errorEvent = event;
-    if ((select(maxFd + 1, &readEvent, 0, &errorEvent, &timer)) < 0)
+    if ((select(maxFd + 1, &readEvent, &writeEvent, &errorEvent, &timer)) < 0)
       FT_THROW("An error occurs during servers run", "select func Failed");
-    HandleClient();
+    Update();
   }
 }
 
-void Http::HandleClient() {
-  Manager::Client.CheckEvent(maxFd, errorEvent, readEvent, writeEvent);
-
-  for (map<int, ClientData>::iterator it = clients.begin(); it != clients.end();
-       it++) {
-    if ((time(NULL) - it->second.last_active_times) > TIMEOUT) {
-      disconnectClient(it->first);
-      break;
+void Http::Update() {
+  for (int i = 0; i <= maxFd; i++) {
+    if (FD_ISSET(i, &errorEvent)) {
+      HandleErrEvent(i);
+    } else if (FD_ISSET(i, &readEvent)) {
+      HandleReadEvent(i);
     }
   }
+
+  cout << "http update\n";
+  Manager::Client.UpdateState(readEvent, errorEvent);
+  Manager::Client.Update();
 }
 
 void Http::HandleErrEvent(int fd) {
-  vector<Server> server = GetServer();
-
-  for (vector<Server>::iterator it = server.begin(); it != server.end(); it++) {
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
+       it++) {
     if (fd == it->GetSocket())
       FT_THROW(IntToString(it->GetPort()) + "Port server socket error",
                "The server socket occured error event");
   }
-  cerr << "Client socket error" << endl;
-  Manager::Client.OnDisConnect(fd);
 }
 
 void Http::HandleReadEvent(int fd) {
   bool isConnecting = false;
   int servSock = 0;
-  vector<Server> server = GetServer();
 
-  // Check connect client
-  for (vector<Server>::iterator it = server.begin(); it != server.end(); it++) {
-    if (it->GetPort() == fd) {
+  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
+       it++) {
+    if (it->GetSocket() == fd) {
       isConnecting = true;
       servSock = it->GetSocket();
       break;
@@ -128,13 +164,10 @@ void Http::HandleReadEvent(int fd) {
                    "Server can not accept",
                "accept func Failed");
 
-    Manager::Client.OnConnect(fd);
-    Manager::Client.clients[clientSock].data.fd = clientSock;
-  } else {
-    Manager::Client.clients[fd].Read();
+    Manager::Client.OnConnect(clientSock);
   }
 }
-void Http::HandleWriteEvent(int fd) {}
+
 vector<Server> Http::GetServer() { return servers; }
 Http::~Http() {}
 
@@ -142,7 +175,7 @@ void PrintConfig(Http &http) {
   vector<Server> server = http.GetServer();
 
   for (vector<Server>::iterator it = server.begin(); it != server.end(); it++) {
-    cout << "server {\n";
+    cout << "server {";
     cout << "   listen " << it->GetPort() << endl;
     cout << "   server_name " << it->GetName() << endl;
     cout << "   root " << it->GetRootPath() << endl;
@@ -166,7 +199,7 @@ void PrintConfig(Http &http) {
         cout << "           root " << it->GetRootPath() << endl;
       cout << "          autoindex " << it->GetIsAutoIndex() << endl;
       cout << "          index " << it->GetIndexPath() << endl;
-      cout << "          return " << it->GetReturnPath() << endl;
+      cout << "          return " << it->GetRedirectionPath() << endl;
       cout << "       }" << endl;
     }
     cout << "}" << endl;

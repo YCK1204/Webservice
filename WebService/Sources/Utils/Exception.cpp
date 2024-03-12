@@ -1,5 +1,5 @@
-#include "../../Headers/Exception.hpp"
-#include "../../Headers/Utils/Utils.hpp"
+#include "../../Headers/Utils/Exception.hpp"
+#include "../../Headers/Utils/Util.hpp"
 
 CustomException::CustomException(const string msg) { errorMsg = msg; }
 
@@ -20,5 +20,10 @@ void SetServerFuncFailed(int port, string detail) {
 
 void IsNotValidServer(int port, string detail) {
   FT_THROW(IntToString(port) + " Port server member variable has not been set ",
+           CustomException(detail));
+}
+
+void IsNotValidLocation(string path, string detail) {
+  FT_THROW("Is not valid loation domain path (" + path + ") ",
            CustomException(detail));
 }

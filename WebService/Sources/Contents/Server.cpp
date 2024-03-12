@@ -1,10 +1,9 @@
 #include "../../Headers/Contents/Http.hpp"
-#include "../../Headers/Utils/Utils.hpp"
+#include "../../Headers/Utils/Util.hpp"
 #include <cstring>
 #include <sys/socket.h>
 
 Server::Server() {
-  memset(&members, 0, sizeof(SERVER_MEMBER));
   members.port = 0;
   members.rootPath = "";
 }
@@ -23,7 +22,7 @@ const Location Server::GetLocation(const string path) {
 
   for (vector<Location>::iterator it = location.begin(); it != location.end();
        it++) {
-    if (!it->GetRootPath().compare(path)) {
+    if (!it->GetDomainPath().compare(path)) {
       ret = *it;
       break;
     }
@@ -54,9 +53,8 @@ void Server::SetServer() {
     SetServerFuncFailed(members.port, "bind func Failed");
   if (listen(sock, MAX_CLIENT_SIZE) == -1)
     SetServerFuncFailed(members.port, "listen func Failed");
-
   if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
-    SetServerFuncFailed(members.port, "fcntl()");
+    SetServerFuncFailed(members.port, "fcntl func Failed");
 }
 
 void Server::SetAddr(struct sockaddr_in &addr) { this->addr = addr; }

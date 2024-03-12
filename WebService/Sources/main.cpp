@@ -1,6 +1,11 @@
-#include "../Headers/Http.hpp"
+#include "../Headers/Contents/Http.hpp"
+#include <sys/_types/_fd_def.h>
 
 int numOfLine;
+int maxFd;
+unsigned short responseStatus;
+fd_set event;
+Http http;
 
 int main(int ac, char *av[]) {
   if (ac > 2) {
@@ -8,6 +13,7 @@ int main(int ac, char *av[]) {
   }
   string path = (ac == 1 ? CONF_PATH : av[1]);
 
-  Http http(path);
+  Manager::Init();
+  http.StartWebService(path);
   return 0;
 }

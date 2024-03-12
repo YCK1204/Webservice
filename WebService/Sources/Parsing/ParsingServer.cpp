@@ -26,6 +26,17 @@ bool IsValidHost(string host) {
   return success;
 }
 
+void CheckValidLocation(Location loc) {
+  string domainPath = loc.GetDomainPath();
+
+  if (domainPath.find("--") != string::npos)
+    IsNotValidLocation(
+        domainPath,
+        "If there are two or more consecutive hyphens, it is not allowed");
+  if (domainPath.find(".") != string::npos)
+    IsNotValidLocation(domainPath, "If dots are included, it is not allowed");
+}
+
 bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
   string first, second;
   bool success = true;
@@ -60,8 +71,11 @@ bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
   } else if (!first.compare("location")) {
     Location location;
     location = ParseLocation(ss, f, serv.GetRootPath(), second);
+    CheckValidLocation(location);
     if (location.GetIndexPath().empty())
       location.SetIndexPath(serv.GetIndexPath());
+    if (location.GetRootPath().empty())
+      location.SetRootPath(serv.GetRootPath());
     serv.AddLocation(location);
   } else {
     return false;

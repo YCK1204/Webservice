@@ -39,7 +39,7 @@ bool ParseLocationMember(stringstream &ss, Location &loc, string root) {
     loc.SetIndexPath(second);
     success &= IsExistFile(root + loc.GetRootPath() + loc.GetIndexPath());
   } else if (!first.compare("return")) {
-    loc.SetReturnPath(second);
+    loc.SetRedirectionPath(second);
   } else if (!first.compare("cgi-path")) {
     loc.SetCgiPath(second);
     success &= (IsExistFile(root + loc.GetRootPath() + second));

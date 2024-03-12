@@ -27,4 +27,5 @@ void ThrowException(const string &file, int line, const string &message);
 }
 void SetServerFuncFailed(int port, string detail);
 void IsNotValidServer(int port, string detail);
+void IsNotValidLocation(string path, string detail);
 #endif

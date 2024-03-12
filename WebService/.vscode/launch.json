@@ -1,0 +1,24 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug",
+      "program": "./webserv",
+      "args": [],
+      "sourceMap": {
+        "/project/src": "${workspaceFolder}/Sources",
+        "/project/src/Contents": "${workspaceFolder}/Sources/Contents",
+        "/project/src/Core": "${workspaceFolder}/Sources/Core",
+        "/project/src/Core/Client": "${workspaceFolder}/Sources/Core/Client",
+        "/project/src/Managers": "${workspaceFolder}/Sources/Managers",
+        "/project/src/Parsing": "${workspaceFolder}/Sources/Parsing",
+        "/project/src/Utils": "${workspaceFolder}/Sources/Utils"
+      }
+    }
+  ]
+}

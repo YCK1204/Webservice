@@ -21,7 +21,7 @@ public:
   ~Location();
   const string GetDomainPath() const;
   const string GetIndexPath() const;
-  const string GetReturnPath() const;
+  const string GetRedirectionPath() const;
   const string GetCgiPath() const;
   const string GetRootPath() const;
   bool GetIsAutoIndex() const;
@@ -29,7 +29,7 @@ public:
 
   void SetDomainPath(const string path);
   void SetIndexPath(const string path);
-  void SetReturnPath(const string path);
+  void SetRedirectionPath(const string path);
   void SetRootPath(const string path);
   void SetCgiPath(const string path);
   void SetIsAutoIndex(const bool f);
