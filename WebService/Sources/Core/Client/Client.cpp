@@ -1,19 +1,16 @@
 #include "../../../Headers/Contents/Http.hpp"
 
 Client::Client() {
-  data.img.buf = NULL;
-  data.img.binary_request = NULL;
   DataClear();
+  data.reqCnt = 0;
 }
 
 void Client::DataClear() {
+  responseStatus = 200;
+
   {
     data.addr.clear();
-    data.http.clear();
-    data.state = READ;
     data.httpVer.clear();
-    data.requestSize = 0;
-    data.redirect.clear();
     data.fileExtension = "html";
     data.lastActTime = time(NULL);
   }
@@ -24,25 +21,12 @@ void Client::DataClear() {
   }
 
   {
-    data.request.body.clear();
-    data.request.line.clear();
-    data.request.root.clear();
-    data.request.total.clear();
-    data.request.header.clear();
-    data.request.method.clear();
-  }
-
-  {
-    // if (data.img.buf != NULL) {
-    //   cout << data.img.buf << endl;
-    //   delete[] data.img.buf;
-    // }
-    // if (data.img.binary_request != NULL) {
-    //   cout << "clear request\n";
-    //   delete[] data.img.binary_request;
-    //   data.img.binary_request = NULL;
-    // }
-    // data.img.buf = new char[2];
+    requestData.body.clear();
+    requestData.line.clear();
+    requestData.root.clear();
+    requestData.total.clear();
+    requestData.header.clear();
+    requestData.method.clear();
   }
 }
 
@@ -53,11 +37,17 @@ void Client::UpdateResponseState() {
   }
 
   Server server = http.GetServer(data.port);
-  Location location = server.GetLocation(data.request.root);
+  Location location = server.GetLocation(requestData.root);
   if (!location.GetRedirectionPath().empty())
     data.responseState = REDIRECTION;
   else if (location.GetIsAutoIndex())
     data.responseState = AUTOINDEX;
+  else if (requestData.root.rfind(".js") != string::npos)
+    data.responseState = JS;
+  else if (requestData.root.rfind(".css") != string::npos)
+    data.responseState = CSS;
+  else if (requestData.root.find("/images") != string::npos)
+    data.responseState = IMG;
   else
     data.responseState = NORMAL;
 }

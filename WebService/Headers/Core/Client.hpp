@@ -15,21 +15,30 @@ private:
   void SetRequestData();
   void CheckValidClient();
   void UpdateResponseState();
+  void SetBodyData(size_t firstEofPos);
   void WriteResponse(string msg, string content);
 
   string GetRoot();
-  string BuildErrContent();
   string BuildContent();
-  string BuildNormalContent();
   string GetHttpVersion();
+  string BuildJsContent();
+  string BuildErrContent();
+  string BuildCssContent();
+  string BuildImgContent();
+  string BuildNormalContent();
+  string GetMsg(int contentLen);
   string BuildAutoindexContent();
   string BuildRedirecionContent();
-  string GetMsg(int contentLen);
   string GetMsgHeaderValue(string key);
+  string BuildFileContent(const string path);
   string BuildAutoindex(string servRoot, string locRoot);
 
+  map<string, string> ParseQueryString();
+
 public:
+  Image imgData;
   CLIENT_DATA data;
+  Request requestData;
   Client();
   ~Client();
   void DataClear();

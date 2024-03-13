@@ -11,7 +11,7 @@ void Cookie::SetCookies(string cookies) {
       size_t start = 0;
       size_t semiColonPos = 0;
       while (true) {
-        semiColonPos = cookies.find(";");
+        semiColonPos = cookies.find(";", semiColonPos);
         if (semiColonPos == string::npos)
           break;
 
@@ -19,7 +19,8 @@ void Cookie::SetCookies(string cookies) {
         key = cookies.substr(start, end - start);
         value = cookies.substr(end + 1, semiColonPos);
         SetCookie(key, value);
-        start = semiColonPos + 1;
+        semiColonPos += 2;
+        start = semiColonPos;
       }
 
       end = cookies.find("=");

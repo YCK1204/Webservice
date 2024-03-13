@@ -75,6 +75,7 @@ void ClientManager::Update() {
 
     switch (state) {
     case ERROR:
+
       clients[i].UpdateError();
       break;
     case READ:
@@ -90,6 +91,7 @@ void ClientManager::Update() {
     if (i == clients.size())
       break;
   }
+
   // CheckTimeOut();
 }
 

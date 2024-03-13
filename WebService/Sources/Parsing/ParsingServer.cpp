@@ -49,7 +49,7 @@ bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
   } else if (!first.compare("listen")) {
     serv.SetPort(atoi(second.c_str()));
     int port = serv.GetPort();
-    success &= !(port < 0 || port > 65535);
+    success &= !(port <= 1023 || port > 65535);
   } else if (!first.compare("server_name")) {
     serv.SetName(second);
   } else if (!first.compare("root")) {
@@ -58,24 +58,25 @@ bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
   } else if (!first.compare("client_body_size")) {
     serv.SetSize(atoi(second.c_str()));
     long size = serv.GetSize();
-    success &= (0 <= size && size <= MAX_CLIENT_BODY_SIZE);
+    success &= (0 <= size && size <= serv.GetSize());
   } else if (!first.compare("index")) {
     serv.SetIndexPath(second);
-    success &= IsExistFile(serv.GetRootPath() + serv.GetIndexPath());
   } else if (!first.compare("error_page")) {
     serv.SetErrorPath(second);
-    success &= IsExistFile(serv.GetRootPath() + serv.GetErrorPath());
   } else if (!first.compare("host")) {
     serv.SetHost(second);
     success &= IsValidHost(second);
+  } else if (!first.compare("js_path")) {
+    serv.SetJsRootPath(second);
+  } else if (!first.compare("css_path")) {
+    serv.SetCssRootPath(second);
+  } else if (!first.compare("img_path")) {
+    serv.SetImgRootPath(second);
   } else if (!first.compare("location")) {
     Location location;
-    location = ParseLocation(ss, f, serv.GetRootPath(), second);
+    location = ParseLocation(ss, f, serv, second);
     CheckValidLocation(location);
-    if (location.GetIndexPath().empty())
-      location.SetIndexPath(serv.GetIndexPath());
-    if (location.GetRootPath().empty())
-      location.SetRootPath(serv.GetRootPath());
+    
     serv.AddLocation(location);
   } else {
     return false;
@@ -87,6 +88,7 @@ bool ParseServerMember(stringstream &ss, fstream &f, Server &serv) {
 Server ParseServer(fstream &f) {
   Server ret;
   string line;
+  bool success = true;
 
   while (!f.eof()) {
     numOfLine++;
@@ -101,11 +103,26 @@ Server ParseServer(fstream &f) {
 
     stringstream ss(line);
 
-    if (!ParseServerMember(ss, f, ret)) {
-      FT_THROW("Is Not vaild server member ( " + line +
-                   " ), Line : " + IntToString(numOfLine),
-               ERR_CONF);
-    }
+    success &= ParseServerMember(ss, f, ret);
+    if (success == false)
+      break;
+  }
+
+  {
+    ret.SetJsRootPath(ret.GetRootPath() + ret.GetJsRootPath());
+    ret.SetCssRootPath(ret.GetRootPath() + ret.GetCssRootPath());
+    ret.SetImgRootPath(ret.GetRootPath() + ret.GetImgRootPath());
+    success &= IsExistFile(ret.GetRootPath() + ret.GetIndexPath());
+    success &= IsExistFile(ret.GetRootPath() + ret.GetErrorPath());
+    success &= IsExistFolder(ret.GetJsRootPath());
+    success &= IsExistFolder(ret.GetCssRootPath());
+    success &= IsExistFolder(ret.GetImgRootPath());
+  }
+
+  if (success == false) {
+    FT_THROW("Is Not vaild server member ( " + line +
+                 " ), Line : " + IntToString(numOfLine),
+             ERR_CONF);
   }
   return ret;
 }

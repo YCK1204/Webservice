@@ -3,8 +3,6 @@
 #include "../../../Headers/Utils/Util.hpp"
 
 void Client::UpdateRead() {
-  // size_t &reqSize = data.requestSize;
-  // char *tmp;
   char buf[BUFFER_SIZE + 1];
 
   int n = recv(data.fd, buf, BUFFER_SIZE, 0);
@@ -15,34 +13,24 @@ void Client::UpdateRead() {
 
   {
     buf[n] = 0;
-    data.request.total += buf;
-    // tmp = new char[reqSize + 1];
-    // for (size_t i = 0; i < reqSize; i++)
-    //   tmp[i] = data.img.buf[i];
-    // tmp[reqSize] = '\0';
-    // if (data.img.buf)
-    //   delete[] data.img.buf;
-    data.requestSize += n;
-    // data.img.buf = new char[reqSize + 1];
-  }
-  {
-    // for (size_t i = 0; i < reqSize - n; i++)
-    //   data.img.buf[i] = tmp[i];
-    // for (ssize_t i = 0; i < n; i++)
-    //   data.img.buf[i + (reqSize - n)] = buf[i];
-    // data.img.buf[reqSize] = '\0';
-    // cout << "readDelete tmp\n";
-    // delete[] tmp;
+    for (int i = 0; i < n; i++)
+      requestData.total += buf[i];
     data.lastActTime = time(NULL);
   }
-
-  size_t blankLinePos = data.request.total.find("\r\n\r\n");
-  if (blankLinePos != string::npos) {
-    if (data.request.total.find("content-length") != string::npos) {
-      if (data.request.total.find("\r\n\r\n", blankLinePos + 1 != string::npos))
+  
+  {
+    size_t blankLinePos = requestData.total.find("\r\n\r\n");
+    if (blankLinePos != string::npos) {
+      if (requestData.total.find("content-length") != string::npos) {
+        if (requestData.total.find("\r\n\r\n",
+                                   blankLinePos + 1 != string::npos))
+          data.state = WRITE;
+      } else {
         data.state = WRITE;
-    } else {
-      data.state = WRITE;
+      }
     }
   }
+
+  if (requestData.total.size() >= MAX_CLIENT_REQUEST_SIZE)
+    Manager::Client.OnDisConnect(data.fd);
 }

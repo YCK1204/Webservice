@@ -3,6 +3,24 @@
 <html>
   <head> </head>
   <body>
-    <p>HELLO WORLD!</p>
+    <h1>
+      <a href="/">HOME</a>
+    </h1>
+    <div id="loginStatus"></div>
+    <script>
+      function isLoggedIn() {
+        return false;
+      }
+
+      window.onload = function () {
+        var loginStatusDiv = document.getElementById('loginStatus');
+
+        if (isLoggedIn()) {
+          loginStatusDiv.innerHTML = '<a href="/sign_out">LogOut</a>';
+        } else {
+          loginStatusDiv.innerHTML = '<a href="/sign_in">Login</a>';
+        }
+      };
+    </script>
   </body>
 </html>

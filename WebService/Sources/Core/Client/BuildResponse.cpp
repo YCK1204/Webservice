@@ -31,7 +31,7 @@ string FormatTime(const time_t &time) {
 
 string Client::BuildAutoindexContent() {
   Server server = http.GetServer(data.port);
-  string autoindex = BuildAutoindex(server.GetRootPath(), data.request.root);
+  string autoindex = BuildAutoindex(server.GetRootPath(), requestData.root);
 
   if (responseStatus >= 400) {
     data.responseState = ERR;
@@ -93,6 +93,15 @@ string Client::BuildAutoindex(string servRoot, string locRoot) {
 /* #endregion */
 /* #region Build Error Content */
 string Client::BuildErrContent() {
+  if (!requestData.root.compare("/favicon.ico")) {
+    return "";
+  }
+
+  if (responseStatus == 404) {
+    Server serv = http.GetServer(data.port);
+    return ReadFile(serv.GetRootPath() + serv.GetErrorPath());
+  }
+
   string code = Manager::Response.GetStatus(responseStatus);
 
   StringFormat body;
@@ -110,27 +119,54 @@ string Client::BuildRedirecionContent() { return ""; }
 /* #region Build Normal Content */
 string Client::BuildNormalContent() {
   Server server = http.GetServer(data.port);
-  Location location = server.GetLocation(data.request.root);
+  Location location = server.GetLocation(requestData.root);
   string root = location.GetRootPath() + location.GetIndexPath();
 
   return ReadFile(root);
 }
 /* #endregion */
+string Client::BuildFileContent(const string path) {
+  size_t slashPos = requestData.root.rfind("/");
+  string fileName = requestData.root.substr(slashPos);
+  data.fileExtension = fileName.substr(fileName.rfind(".") + 1);
+
+  string root = path + fileName;
+  return ReadFile(root);
+}
+
+string Client::BuildJsContent() {
+  Server server = http.GetServer(data.port);
+  return BuildFileContent(server.GetJsRootPath());
+}
+
+string Client::BuildCssContent() {
+  Server server = http.GetServer(data.port);
+  return BuildFileContent(server.GetCssRootPath());
+}
+
+string Client::BuildImgContent() {
+  Server server = http.GetServer(data.port);
+  return BuildFileContent(server.GetImgRootPath());
+}
+
 /* #endregion */
 string Client::BuildContent() {
+
   switch (data.responseState) {
   case ERR:
     return BuildErrContent();
-    break;
   case REDIRECTION:
     return BuildRedirecionContent();
-    break;
   case AUTOINDEX:
     return BuildAutoindexContent();
-    break;
   case NORMAL:
     return BuildNormalContent();
-    break;
+  case JS:
+    return BuildJsContent();
+  case CSS:
+    return BuildCssContent();
+  case IMG:
+    return BuildImgContent();
   }
 
   return "";
@@ -138,7 +174,7 @@ string Client::BuildContent() {
 
 string Client::GetMsg(int contentLen) {
   Server server = http.GetServer(data.port);
-  Location location = server.GetLocation(data.request.root);
+  Location location = server.GetLocation(requestData.root);
 
   struct stat fileStat;
 
@@ -148,7 +184,8 @@ string Client::GetMsg(int contentLen) {
   string msg = http.responseMsgHeaders.Format(
       http.responseMsgHeaders.GetString(), IntToString(responseStatus).c_str(),
       Manager::Response.GetStatus(responseStatus).c_str(),
-      IntToString(contentLen).c_str(), GetDate().c_str(),
+      IntToString(contentLen).c_str(),
+      Manager::Response.type[data.fileExtension].c_str(), GetDate().c_str(),
       IntToString(TIMEOUT).c_str(), IntToString(MAX_REQUEST_CNT).c_str(),
       FormatTime(fileStat.st_mtime).c_str());
 

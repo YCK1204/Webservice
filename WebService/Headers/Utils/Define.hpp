@@ -4,22 +4,23 @@
 #include <string>
 #include <sys/_types/_fd_def.h>
 
-#define MAX_CLIENT_BODY_SIZE 4096
-#define MAX_CLIENT_SIZE 20
-#define BUFFER_SIZE 2048
 #define TIMEOUT 1
+#define MAX_ROOT_LEN 50
+#define BUFFER_SIZE 2048
 #define REQUEST_INTERVAL 2
 #define MAX_REQUEST_CNT 10
-#define MAX_ROOT_LEN 20
+#define MAX_CLIENT_SIZE 20
+#define MAX_CLIENT_REQUEST_SIZE 10000
 
 #define CONF_PATH "./Config/default.conf"
 #define ERR_CONF "Error : Config FileStream"
 #define ERR_SYS_FUNC "Error : System function failed"
+#define CSV_PATH "/account.csv"
 
 extern int maxFd;
 extern int numOfLine;
-extern unsigned short responseStatus;
 extern fd_set event;
+extern unsigned short responseStatus;
 
 using namespace std;
 
@@ -37,51 +38,57 @@ typedef enum {
 } CLIENT_STATE;
 
 typedef enum {
+  JS,
+  ERR,
+  CSS,
+  IMG,
+  NORMAL,
   AUTOINDEX,
   REDIRECTION,
-  ERR,
-  NORMAL,
 } RESPONSE_STATE;
 
 typedef struct {
   int port;
   long clientBodySize;
-  string serverName;
-  string indexPath;
-  string errorPagePath;
   string host;
   string rootPath;
+  string indexPath;
+  string serverName;
+  string jsRootPath;
+  string cssRootPath;
+  string imgRootPath;
+  string errorPagePath;
 } SERVER_MEMBER;
 
 typedef struct {
-  string domainPath;
-  string indexPath;
-  string returnPath;
+  bool methods[3];
+  bool isAutoIndex;
   string cgiPath;
   string rootPath;
-  bool isAutoIndex;
-  bool methods[3];
+  string indexPath;
+  string domainPath;
+  string returnPath;
 } LOCATION_MEMBER;
 
 typedef struct {
-  string display;
   string result;
+  string display;
 } Calculator;
 
 typedef struct {
-  char *buf;
-  char *binary_request;
+  string buf;
 
   size_t image_size;
 } Image;
 
 typedef struct {
-  string total;
-  string header;
+  string root;
   string body;
   string line;
+  string total;
+  string header;
   string method;
-  string root;
+  size_t bodySize;
 } Request;
 
 typedef struct {
@@ -96,17 +103,11 @@ typedef struct {
   bool delete_cookie;
 
   string addr;
-  string http;
-  Request request;
-  string redirect;
   string httpVer;
   string fileExtension;
 
-  size_t requestSize;
-  size_t bodySize;
   time_t lastActTime;
 
-  Image img;
   Calculator cal;
 } CLIENT_DATA;
 

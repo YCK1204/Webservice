@@ -20,11 +20,11 @@ Http::Http() {
 Accept-language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7\r\n\
 Cache-Control:no-cache=Set-Cookie\r\n\
 Connection: keep-alive\r\n\
-Content-Length: text/html\r\n\
-Content-Type: {3}; charset=utf-8\r\n\
-Date: {4}\r\n\
-keep-alive: timeout= {5}, max= {6}\r\n\
-Last-Modified: {7}\r\n\
+Content-Length: {3}\r\n\
+Content-Type: {4}; charset=utf-8\r\n\
+Date: {5}\r\n\
+keep-alive: timeout= {6}, max= {7}\r\n\
+Last-Modified: {8}\r\n\
 ";
 
   // Server:   server.getServerName()  \\r\\n\\r;
@@ -130,7 +130,6 @@ void Http::Update() {
     }
   }
 
-  cout << "http update\n";
   Manager::Client.UpdateState(readEvent, errorEvent);
   Manager::Client.Update();
 }

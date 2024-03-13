@@ -3,7 +3,7 @@
 
 string Client::GetMsgHeaderValue(string key) {
   string value;
-  string head = data.request.header;
+  string head = requestData.header;
   size_t pos = head.find(key);
 
   if (pos != string::npos) {
@@ -21,11 +21,11 @@ string Client::GetMsgHeaderValue(string key) {
 
 string Client::GetRoot() {
   string root;
-  size_t methodLen = data.request.method.length() + 1;
-  size_t posOfStartHttp = data.request.line.find("HTTP") - 1;
+  size_t methodLen = requestData.method.length() + 1;
+  size_t posOfStartHttp = requestData.line.find("HTTP") - 1;
 
   try {
-    root = data.request.line.substr(methodLen, posOfStartHttp - methodLen);
+    root = requestData.line.substr(methodLen, posOfStartHttp - methodLen);
   } catch (exception &e) {
     cerr << e.what() << ", " << __FUNCTION__ << endl;
   }
@@ -35,11 +35,11 @@ string Client::GetRoot() {
 
 string Client::GetHttpVersion() {
   string ret;
-  size_t posOfStart = data.request.line.find("HTTP/") + 5;
-  size_t posOfNewLine = data.request.line.find("\r\n");
+  size_t posOfStart = requestData.line.find("HTTP/") + 5;
+  size_t posOfNewLine = requestData.line.find("\r\n");
 
   try {
-    ret = data.request.line.substr(posOfStart, posOfNewLine - posOfStart);
+    ret = requestData.line.substr(posOfStart, posOfNewLine - posOfStart);
   } catch (exception &e) {
     cerr << e.what() << ", " << __FUNCTION__ << endl;
   }
@@ -47,15 +47,34 @@ string Client::GetHttpVersion() {
   return ret;
 }
 
+void Client::SetBodyData(size_t firstEofPos) {
+  string findStr = "Content-Length: ";
+  size_t pos = requestData.header.find(findStr);
+
+  try {
+    if (pos == string::npos)
+      return;
+    pos += findStr.length();
+    size_t newLinePos = requestData.header.find("\r\n");
+    requestData.bodySize =
+        StringToInt(requestData.header.substr(pos, newLinePos - pos));
+
+    requestData.body =
+        requestData.total.substr(firstEofPos + 4, requestData.bodySize);
+  } catch (exception &e) {
+    cerr << e.what() << ", " << __FUNCTION__ << endl;
+  }
+}
+
 void Client::SetRequestData() {
   try {
-    size_t posOfBlankline = data.request.total.find("\r\n\r\n");
-    size_t posOfFirstNewLine = data.request.total.find("\r\n");
+    size_t posOfBlankline = requestData.total.find("\r\n\r\n");
+    size_t posOfFirstNewLine = requestData.total.find("\r\n");
     data.reqCnt++;
 
-    data.request.header = data.request.total.substr(0, posOfBlankline);
-    data.request.body = data.request.total.substr(posOfBlankline);
-    data.request.line = data.request.header.substr(0, posOfFirstNewLine);
+    requestData.header = requestData.total.substr(0, posOfBlankline);
+    requestData.line = requestData.header.substr(0, posOfFirstNewLine);
+    SetBodyData(posOfBlankline);
     SetMethod();
   } catch (exception &e) {
     cerr << e.what() << ", " << __FUNCTION__ << endl;
@@ -63,16 +82,16 @@ void Client::SetRequestData() {
 }
 
 void Client::SetMethod() {
-  string method = data.request.header.substr(0, 6);
+  string method = requestData.header.substr(0, 6);
 
   if (method.find("GET") != string::npos)
-    data.request.method = "GET";
+    requestData.method = "GET";
   else if (method.find("POST") != string::npos)
-    data.request.method = "POST";
+    requestData.method = "POST";
   else if (method.find("DELETE") != string::npos)
-    data.request.method = "DELETE";
+    requestData.method = "DELETE";
   else
-    data.request.method = "ERROR";
+    requestData.method = "ERROR";
 }
 
 void Client::SetData() {
@@ -83,16 +102,16 @@ void Client::SetData() {
   data.addr = totalAddr.substr(0, addrColonPos);
   if (!data.addr.compare("localhost"))
     data.addr = "127.0.0.1";
-  data.request.root = GetRoot();
+  requestData.root = GetRoot();
   data.httpVer = GetHttpVersion();
   data.port = StringToInt(totalAddr.substr(addrColonPos + 1));
   cookies.SetCookies(cookie);
 }
 
 void Client::CheckValidClient() {
-  std::string root = data.request.root;
+  std::string root = requestData.root;
   int port = data.port;
-  std::string method = data.request.method;
+  std::string method = requestData.method;
 
   Server server = http.GetServer(port);
 
@@ -102,9 +121,13 @@ void Client::CheckValidClient() {
   }
 
   Location location = server.GetLocation(root);
-  if (location.GetDomainPath().compare(data.request.root)) {
-    responseStatus = 404;
-    return;
+  if (location.GetDomainPath().compare(requestData.root)) {
+    if (root.rfind(".js") == string::npos &&
+        root.rfind(".css") == string::npos &&
+        root.substr(0, 7).compare("/images")) {
+      responseStatus = 404;
+      return;
+    }
   }
 
   bool methods[3] = {location.GetMethod(0), location.GetMethod(1),
@@ -121,10 +144,33 @@ void Client::CheckValidClient() {
     responseStatus = 414;
   else if (data.httpVer.compare("1.1"))
     responseStatus = 505;
-  else if (server.GetHost().compare(data.addr))
-    responseStatus = 403;
   else if (port == 65536 || server.GetPort() != port)
     responseStatus = 421;
   else if (data.reqCnt >= MAX_REQUEST_CNT)
     responseStatus = 429;
+}
+
+map<string, string> Client::ParseQueryString() {
+  map<string, string> ret;
+  string body = requestData.body;
+  size_t start = 0;
+  size_t end = 0;
+
+  try {
+    while (true) {
+      end = body.find("=", end);
+      string key = body.substr(start, end - start);
+      end++;
+      start = end;
+      end = body.find("&", end);
+      if (end == string::npos) {
+        ret[key] = body.substr(start);
+        break;
+      }
+      ret[key] = body.substr(start, end - start);
+    }
+  } catch (exception &e) {
+    cerr << e.what() << ", " << __FUNCTION__ << endl;
+  }
+  return ret;
 }

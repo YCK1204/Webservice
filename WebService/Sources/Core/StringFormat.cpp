@@ -1,6 +1,7 @@
 #include "../../Headers/Core/StringFormat.hpp"
 #include "../../Headers/Utils/Util.hpp"
 #include <cstdarg>
+#include <exception>
 
 string FormatString(const string seperator, string str, const string s1) {
   size_t start = 0;
@@ -30,13 +31,18 @@ string StringFormat::Format(const char *format, ...) {
 
   va_start(args, format);
 
-  while (true) {
-    const char *a = va_arg(args, const char *);
-    if (a == NULL)
-      break;
-    string arg = a;
-    str = FormatString("{" + IntToString(cnt) + "}", str, arg);
-    cnt++;
+  try {
+
+    while (true) {
+      if (str.find("{" + IntToString(cnt) + "}") == string::npos)
+        break;
+      const char *a = va_arg(args, const char *);
+      string arg = a;
+      str = FormatString("{" + IntToString(cnt) + "}", str, arg);
+      cnt++;
+    }
+  } catch (exception &e) {
+    cerr << e.what() << ", " << __FUNCTION__ << endl;
   }
 
   va_end(args);

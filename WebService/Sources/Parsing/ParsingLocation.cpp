@@ -41,11 +41,9 @@ bool ParseLocationMember(stringstream &ss, Location &loc, string root) {
   } else if (!first.compare("return")) {
     loc.SetRedirectionPath(second);
   } else if (!first.compare("cgi-path")) {
-    loc.SetCgiPath(second);
-    success &= (IsExistFile(root + loc.GetRootPath() + second));
+    loc.SetCgiPath(root + second);
   } else if (!first.compare("root")) {
     loc.SetRootPath(second);
-    success &= IsExistFolder(root + loc.GetRootPath());
   } else {
     return false;
   }
@@ -53,9 +51,10 @@ bool ParseLocationMember(stringstream &ss, Location &loc, string root) {
   return success;
 }
 
-Location ParseLocation(stringstream &ss, fstream &f, string root,
+Location ParseLocation(stringstream &ss, fstream &f, Server serv,
                        string domainRoot) {
   Location ret;
+  bool success = true;
   string line;
 
   ret.SetDomainPath(domainRoot);
@@ -74,11 +73,25 @@ Location ParseLocation(stringstream &ss, fstream &f, string root,
       break;
 
     stringstream s(line);
-    if (!ParseLocationMember(s, ret, root))
-      FT_THROW("Is Not vaild location member (" + line +
-                   "), Line : " + IntToString(numOfLine),
-               ERR_CONF);
+    success &= ParseLocationMember(s, ret, serv.GetRootPath());
+    if (success == false)
+      break;
   }
 
+  {
+    if (ret.GetIndexPath().empty())
+      ret.SetIndexPath(serv.GetIndexPath());
+    ret.SetRootPath(serv.GetRootPath() + ret.GetRootPath());
+
+    if (!ret.GetCgiPath().empty())
+      success &= IsExistFile(ret.GetRootPath() + ret.GetCgiPath());
+    success &= IsExistFolder(ret.GetRootPath());
+    success &= IsExistFile(ret.GetRootPath() + ret.GetIndexPath());
+  }
+
+  if (success == false)
+    FT_THROW("Is Not vaild location member (" + line +
+                 "), Line : " + IntToString(numOfLine),
+             ERR_CONF);
   return ret;
 }

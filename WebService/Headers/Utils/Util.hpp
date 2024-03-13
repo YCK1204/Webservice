@@ -27,7 +27,7 @@ using namespace std;
 Server ParseServer(fstream &f);
 string trim(const string &s);
 string StringToLower(string str);
-Location ParseLocation(stringstream &ss, fstream &f, string root,
+Location ParseLocation(stringstream &ss, fstream &f, Server serv,
                        string domainRoot);
 bool IsRemaingString(stringstream &ss);
 string IntToString(int n);

@@ -1,6 +1,9 @@
 #include "../../Headers/Contents/Http.hpp"
 #include "../../Headers/Utils/Util.hpp"
+#include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <ios>
 #include <sys/socket.h>
 
 Server::Server() {
@@ -16,6 +19,9 @@ const string Server::GetErrorPath() const { return members.errorPagePath; }
 const string Server::GetHost() const { return members.host; }
 const string Server::GetRootPath() const { return members.rootPath; }
 int Server::GetSocket() const { return sock; }
+const string Server::GetImgRootPath() const { return members.imgRootPath; }
+const string Server::GetJsRootPath() const { return members.jsRootPath; }
+const string Server::GetCssRootPath() const { return members.cssRootPath; }
 const Location Server::GetLocation(const string path) {
   vector<Location> location = GetLocation();
   Location ret;
@@ -55,6 +61,108 @@ void Server::SetServer() {
     SetServerFuncFailed(members.port, "listen func Failed");
   if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
     SetServerFuncFailed(members.port, "fcntl func Failed");
+
+  string path = members.rootPath + CSV_PATH;
+  ifstream inFile(path);
+  if (inFile.is_open() == false) {
+    fstream file(path, ios::out | ios::trunc);
+    file << "id, password\n";
+    file.close();
+  } else {
+    fstream file(path, ios::in);
+    string line;
+    getline(file, line);
+    while (getline(file, line)) {
+      Account account;
+      size_t commaPos = line.find(",");
+      string id = line.substr(0, commaPos);
+      string password = line.substr(commaPos + 2);
+      account.SetId(id);
+      account.SetPassword(password);
+      accounts.push_back(account);
+    }
+  }
+
+  inFile.close();
+}
+
+Account Server::FindAccount(string id) {
+  Account ret;
+
+  for (size_t i = 0; i < accounts.size(); i++) {
+    if (id == accounts[i].GetId())
+      ret = accounts[i];
+    break;
+  }
+  return ret;
+}
+
+void Server::DeleteAccount(string id) {
+  Account target;
+  for (size_t i = 0; i < accounts.size(); i++) {
+    if (id == accounts[i].GetId()) {
+      accounts.erase(accounts.begin() + i);
+      target = accounts[i];
+      break;
+    }
+  }
+
+  ifstream inFile(members.rootPath + CSV_PATH);
+
+  string line;
+  string targetString = target.GetId() + ", " + target.GetPassword();
+  string total;
+  while (getline(inFile, line)) {
+    if (line.compare(targetString)) {
+      total += line + "\n";
+    }
+  }
+
+  inFile.close();
+  fstream file(members.rootPath + CSV_PATH, ios::out);
+  file << total;
+  file.close();
+}
+
+void Server::AddAccount(Account account) {
+  fstream file(members.rootPath + CSV_PATH, ios::app);
+
+  string line = account.GetId() + ", " + account.GetPassword() + "\n";
+  file << line;
+  accounts.push_back(account);
+  file.close();
+}
+
+void Server::UpdateAccount(Account account) {
+  Account oldData;
+  string id = account.GetId();
+
+  for (size_t i = 0; i < accounts.size(); i++) {
+    if (id == accounts[i].GetId()) {
+      oldData = accounts[i];
+      accounts[i].SetPassword(account.GetPassword());
+      break;
+    }
+  }
+
+  ifstream inFile(members.rootPath + CSV_PATH);
+
+  string line;
+  string oldString = id + ", " + oldData.GetPassword();
+  string newString = id + ", " + account.GetPassword();
+  string total;
+  while (getline(inFile, line)) {
+    if (!line.compare(oldString)) {
+      total += newString + "\n";
+    } else {
+      total += oldString + "\n";
+    }
+  }
+
+  inFile.close();
+  fstream file(members.rootPath + CSV_PATH, ios::out);
+  file << total;
+  file.close();
 }
 
 void Server::SetAddr(struct sockaddr_in &addr) { this->addr = addr; }
@@ -66,3 +174,6 @@ void Server::SetErrorPath(const string path) { members.errorPagePath = path; }
 void Server::SetHost(const string host) { members.host = host; }
 void Server::SetRootPath(const string path) { members.rootPath = path; }
 void Server::AddLocation(Location &location) { locations.push_back(location); }
+void Server::SetImgRootPath(const string path) { members.imgRootPath = path; }
+void Server::SetJsRootPath(const string path) { members.jsRootPath = path; }
+void Server::SetCssRootPath(const string path) { members.cssRootPath = path; }

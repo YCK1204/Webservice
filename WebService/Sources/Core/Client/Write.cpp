@@ -8,7 +8,7 @@ void Client::UpdateWrite() {
   CheckValidClient();
   UpdateResponseState();
 
-  switch (data.request.total[0]) {
+  switch (requestData.method[0]) {
   case 'G':
     WriteGet();
     break;
@@ -25,18 +25,15 @@ void Client::UpdateWrite() {
 
   if (time(NULL) - data.lastActTime < REQUEST_INTERVAL)
     data.reqCnt = 0;
-  data.state = ERROR;
 }
 
 void Client::WriteResponse(string msg, string content) {
   if (write(data.fd, msg.c_str(), msg.length()) == -1) {
     // cerr << ORANGE "Error : write error (response msg)" CLEAR << endl;
-    data.state = ERROR;
     return;
   }
   if (write(data.fd, content.c_str(), content.length()) == -1) {
     // cerr << ORANGE "Error : write error (response content)" CLEAR << endl;
-    data.state = ERROR;
     return;
   }
 
@@ -56,7 +53,6 @@ void Client::WriteResponse(string msg, string content) {
 void Client::WriteGet() {
   string msg, content;
 
-  responseStatus = 200;
   content = BuildContent();
   msg = GetMsg(content.length());
 
@@ -64,33 +60,16 @@ void Client::WriteGet() {
 }
 
 void Client::WritePost() {
+  map<string, string> postData = ParseQueryString();
+  if (postData.find("method") == postData.end())
+    return;
+  // board
+  // file upload
 
-  // size_t eofRequestHeadPos = data.request.find("\r\n\r\n");
-  // size_t contentLenPos = data.request.find("Content-Length:");
-  // int fd = data.fd;
+  // sign_in
+  // sign_up
+  // sign_out
 
-  // if (contentLenPos == string::npos) {
-  //   responseStatus = 400;
-  //   WriteResponse();
-  //   Manager::Client.OnDisConnect(fd);
-  //   return;
-  // }
-
-  // data.bodySize = data.requestSize - (eofRequestHeadPos + 4);
-
-  // if (data.bodySize == StringToInt(data.request.substr(contentLenPos + 16)))
-  // {
-  //   data.body = data.request.substr(eofRequestHeadPos + 4);
-  //   data.body_method = getBodyMethod(fd);
-  //   if (data.body.find("------WebKitFormBoundary") == string::npos) {
-  //     data.body = decoding(data.body);
-  //   } else {
-  //     parsingFormData(fd);
-  //   }
-  //   writeResponse( , );
-  // } else {
-  //   data.body.clear();
-  // }
 }
 
 void Client::WriteDelete() {}
