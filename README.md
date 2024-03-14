@@ -28,7 +28,7 @@ default_root
 allow methods (GET, POST, DELETE)
 autoindex (on, off)
 default_index_page_path
-return path (301)
+return path (302)
 cgi-path
 default_root represents the domain.
 
@@ -41,6 +41,8 @@ default_index_page_path is used as root_path + default_index_page_path.
 cgi-path opens a window with CGI functionality, appended to root_path.
 
 Multiple servers can be launched using different ports. Access through a web browser by entering localhost:port/desired_location_root in the address bar.
+
+The configuration for location blocks with POST and DELETE methods, as well as the cgi-path, must be explicitly defined in the code. Without this configuration, the functionality may not work as expected.
 
 Program Usage
 
