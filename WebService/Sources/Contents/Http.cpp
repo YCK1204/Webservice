@@ -19,28 +19,13 @@ Http::Http() {
   responseMsgHeaders = "HTTP/1.1 {1} {2}\r\n\
 Accept-language: ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7\r\n\
 Cache-Control:no-cache=Set-Cookie\r\n\
-Connection: keep-alive\r\n\
+Connection: close\r\n\
 Content-Length: {3}\r\n\
 Content-Type: {4}; charset=utf-8\r\n\
 Date: {5}\r\n\
 keep-alive: timeout= {6}, max= {7}\r\n\
 Last-Modified: {8}\r\n\
 ";
-
-  // Server:   server.getServerName()  \\r\\n\\r;
-  //   if (clients[clnt_sock].set_cookie)
-  // createCookie(clnt_sock);
-  //   else if (clients[clnt_sock].delete_cookie)
-  // deleteCookie();
-
-  // Location:
-  //   location.getRedirect()  \\r;
-  // Location:
-  //   clients[clnt_sock].root  \\r;
-  //   else if (!clients[clnt_sock].redirect.empty()) Location :
-  //   +clients[clnt_sock]
-  //                                                                 .redirect +
-  //                                                                 \\r;
 }
 
 void Http::StartWebService(const string confPath) {
@@ -169,38 +154,3 @@ void Http::HandleReadEvent(int fd) {
 
 vector<Server> Http::GetServer() { return servers; }
 Http::~Http() {}
-
-void PrintConfig(Http &http) {
-  vector<Server> server = http.GetServer();
-
-  for (vector<Server>::iterator it = server.begin(); it != server.end(); it++) {
-    cout << "server {";
-    cout << "   listen " << it->GetPort() << endl;
-    cout << "   server_name " << it->GetName() << endl;
-    cout << "   root " << it->GetRootPath() << endl;
-    cout << "   client_body_size " << it->GetSize() << endl;
-    cout << "   index " << it->GetIndexPath() << endl;
-    cout << "   error_page " << it->GetErrorPath() << endl;
-    cout << "   host " << it->GetHost() << endl;
-    vector<Location> location = it->GetLocation();
-    for (vector<Location>::iterator it = location.begin(); it != location.end();
-         it++) {
-      cout << "       location " << it->GetDomainPath() << " {" << endl;
-      cout << "            allow_methods ";
-      if (it->GetMethod(GET))
-        cout << "GET ";
-      if (it->GetMethod(POST))
-        cout << "POST ";
-      if (it->GetMethod(DELETE))
-        cout << "DELETE ";
-      cout << endl;
-      if (!it->GetRootPath().empty())
-        cout << "           root " << it->GetRootPath() << endl;
-      cout << "          autoindex " << it->GetIsAutoIndex() << endl;
-      cout << "          index " << it->GetIndexPath() << endl;
-      cout << "          return " << it->GetRedirectionPath() << endl;
-      cout << "       }" << endl;
-    }
-    cout << "}" << endl;
-  }
-}

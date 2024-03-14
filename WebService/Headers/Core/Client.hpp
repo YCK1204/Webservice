@@ -8,17 +8,21 @@ class Client {
 private:
   Cookie cookies;
   void SetData();
-  void WriteGet();
+  void HandleWrite();
   void SetMethod();
-  void WritePost();
-  void WriteDelete();
   void SetRequestData();
   void CheckValidClient();
   void UpdateResponseState();
   void SetBodyData(size_t firstEofPos);
   void WriteResponse(string msg, string content);
 
+  string SignUp(map<string, string> postData);
+
+  string SignIn(map<string, string> postData);
+
+  string SignOut(map<string, string> postData);
   string GetRoot();
+  string HandlePost();
   string BuildContent();
   string GetHttpVersion();
   string BuildJsContent();
@@ -36,7 +40,6 @@ private:
   map<string, string> ParseQueryString();
 
 public:
-  Image imgData;
   CLIENT_DATA data;
   Request requestData;
   Client();

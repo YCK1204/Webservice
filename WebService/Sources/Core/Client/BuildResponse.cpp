@@ -1,9 +1,8 @@
 #include "../../../Headers/Contents/Http.hpp"
 #include <algorithm>
+#include <cstring>
 #include <sys/stat.h>
 /* #region Build Contents */
-/* #region Build Autoindex Content */
-
 bool CompareFiles(const FileStream &f1, const FileStream &f2) {
   return f1.name < f2.name;
 }
@@ -45,40 +44,33 @@ string Client::BuildAutoindex(string servRoot, string locRoot) {
   DIR *dir;
   struct dirent *entry;
   struct stat fileStat;
-  vector<FileStream> files;
 
   dirRoot = servRoot;
-  if (locRoot[0] == '/')
-    locRoot = locRoot.substr(1);
   dirRoot += locRoot;
   dir = opendir(dirRoot.c_str());
+  msg += "    <table>\n<tr><th>Name</th><th>Last "
+         "Modified</th><th>Size</th></tr>\n";
   if (dir) {
     while ((entry = readdir(dir)) != NULL) {
       string file_path = dirRoot + "/" + entry->d_name;
-      FileStream file;
-      file.name = static_cast<string>(entry->d_name);
-      file.lastModified = fileStat.st_mtime;
-      file.size = fileStat.st_size;
-      if (S_ISDIR(fileStat.st_mode))
-        file.is_dir = true;
-      else
-        file.is_dir = false;
-      files.push_back(file);
-    }
-    sort(files.begin(), files.end(), CompareFiles);
-    msg += "    <table>\n<tr><th>Name</th><th>Last "
-           "Modified</th><th>Size</th></tr>\n";
-    for (vector<FileStream>::iterator it = files.begin(); it != files.end();
-         it++) {
+      if (stat(file_path.c_str(), &fileStat) == -1) {
+        responseStatus = 503;
+        return "";
+      }
       msg += "    <tr>";
-      if (it->is_dir)
-        msg += "        <td><a href=\"" + it->name + "/\">" + it->name +
-               "/</a></td>\n";
-      else
-        msg += "        <td><a href=\"" + it->name + "\">" + it->name +
-               "</a></td>\n";
-      msg += "        <td>" + FormatTime(it->lastModified) + "</td>\n";
-      double fileSize = static_cast<double>(it->size);
+      msg += "        <td><a href=\"";
+      msg += entry->d_name;
+      if (S_ISDIR(fileStat.st_mode) && strcmp(entry->d_name, ".") &&
+          strcmp(entry->d_name, ".."))
+        msg += "/";
+      msg += "\">";
+      msg += entry->d_name;
+      if (S_ISDIR(fileStat.st_mode) && strcmp(entry->d_name, ".") &&
+          strcmp(entry->d_name, ".."))
+        msg += "/";
+      msg += "</a></td>\n";
+      msg += "        <td>" + FormatTime(fileStat.st_mtime) + "</td>\n";
+      double fileSize = static_cast<double>(fileStat.st_size);
       msg += "        <td>" + FormatSize(fileSize) + "</td>\n";
       msg += "    </tr>\n";
     }
@@ -90,8 +82,6 @@ string Client::BuildAutoindex(string servRoot, string locRoot) {
   }
   return ret;
 }
-/* #endregion */
-/* #region Build Error Content */
 string Client::BuildErrContent() {
   if (!requestData.root.compare("/favicon.ico")) {
     return "";
@@ -112,19 +102,16 @@ string Client::BuildErrContent() {
   return body.Format(body.GetString(), IntToString(responseStatus).c_str(),
                      code.c_str());
 }
-/* #endregion */
-/* #region Build Redirecion Content */
-string Client::BuildRedirecionContent() { return ""; }
-/* #endregion */
-/* #region Build Normal Content */
+string Client::BuildRedirecionContent() {
+  responseStatus = 302;
+  return ""; }
+
 string Client::BuildNormalContent() {
   Server server = http.GetServer(data.port);
   Location location = server.GetLocation(requestData.root);
-  string root = location.GetRootPath() + location.GetIndexPath();
 
-  return ReadFile(root);
+  return ReadFile(location.GetRootPath() + location.GetIndexPath());
 }
-/* #endregion */
 string Client::BuildFileContent(const string path) {
   size_t slashPos = requestData.root.rfind("/");
   string fileName = requestData.root.substr(slashPos);
@@ -148,8 +135,6 @@ string Client::BuildImgContent() {
   Server server = http.GetServer(data.port);
   return BuildFileContent(server.GetImgRootPath());
 }
-
-/* #endregion */
 string Client::BuildContent() {
 
   switch (data.responseState) {
@@ -171,6 +156,7 @@ string Client::BuildContent() {
 
   return "";
 }
+/* #endregion */
 
 string Client::GetMsg(int contentLen) {
   Server server = http.GetServer(data.port);
@@ -198,8 +184,4 @@ string Client::GetMsg(int contentLen) {
   msg += "\r\n";
 
   return msg;
-  // if (clients[clnt_sock].set_cookie)
-  //   ss << createCookie(clnt_sock);
-  // else if (clients[clnt_sock].delete_cookie)
-  //   ss << deleteCookie();
 }

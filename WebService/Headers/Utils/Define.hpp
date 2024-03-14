@@ -15,7 +15,6 @@
 #define CONF_PATH "./Config/default.conf"
 #define ERR_CONF "Error : Config FileStream"
 #define ERR_SYS_FUNC "Error : System function failed"
-#define CSV_PATH "/account.csv"
 
 extern int maxFd;
 extern int numOfLine;
@@ -71,17 +70,6 @@ typedef struct {
 } LOCATION_MEMBER;
 
 typedef struct {
-  string result;
-  string display;
-} Calculator;
-
-typedef struct {
-  string buf;
-
-  size_t image_size;
-} Image;
-
-typedef struct {
   string root;
   string body;
   string line;
@@ -99,16 +87,12 @@ typedef struct {
   CLIENT_STATE state;
   RESPONSE_STATE responseState;
 
-  bool set_cookie;
-  bool delete_cookie;
-
   string addr;
   string httpVer;
   string fileExtension;
 
   time_t lastActTime;
 
-  Calculator cal;
 } CLIENT_DATA;
 
 #endif

@@ -16,11 +16,6 @@ void Client::DataClear() {
   }
 
   {
-    data.cal.result.clear();
-    data.cal.display.clear();
-  }
-
-  {
     requestData.body.clear();
     requestData.line.clear();
     requestData.root.clear();
@@ -46,7 +41,8 @@ void Client::UpdateResponseState() {
     data.responseState = JS;
   else if (requestData.root.rfind(".css") != string::npos)
     data.responseState = CSS;
-  else if (requestData.root.find("/images") != string::npos)
+  else if (requestData.root.rfind(".") != string::npos &&
+           requestData.root.rfind(".com"))
     data.responseState = IMG;
   else
     data.responseState = NORMAL;

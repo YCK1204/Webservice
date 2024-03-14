@@ -150,22 +150,3 @@ string ReadFile(string file_path) {
   file.close();
   return total;
 }
-
-// void printLog(int clnt_sock) {
-//   // if (responseStatus) {
-//   //   cout << RED << "Response to client : " << clnt_sock << ",
-//   status=["
-//   //             << err << "], method=[" << clients[clnt_sock].method
-//   //             << "], URI=" << clients[clnt_sock].root << CLEAR <<
-//   endl;
-//   // } else {
-//   //   const char *const color = status >= 300   ? LIME
-//   //                             : status <= 200 ? SKY_BLUE
-//   //                                             : YELLOW;
-//   //   cout << color << "Response to client : " << clnt_sock << ",
-//   status=["
-//   //             << status << "], method=[" << clients[clnt_sock].method
-//   //             << "], URI=" << clients[clnt_sock].root << CLEAR <<
-//   endl;
-//   // }
-// }

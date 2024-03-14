@@ -10,7 +10,6 @@
 #include <string>
 #include <sys/_types/_fd_def.h>
 #include <vector>
-#include "../Core/Account.hpp"
 using namespace std;
 
 class Location;
@@ -22,7 +21,6 @@ private:
   SERVER_MEMBER members;
   struct sockaddr_in addr;
   vector<Location> locations;
-  vector<Account> accounts;
 
 public:
   Server();
@@ -40,7 +38,6 @@ public:
   const string GetImgRootPath() const;
   const Location GetLocation(const string path);
   vector<Location> GetLocation();
-  Account FindAccount(string id);
 
   void SetPort(const int port);
   void SetSize(const long size);
@@ -56,8 +53,6 @@ public:
   void SetServer();
   void SetAddr(struct sockaddr_in &addr);
   void DeleteAccount(string id);
-  void AddAccount(Account account);
-  void UpdateAccount(Account account);
 };
 
 #endif
