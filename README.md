@@ -29,7 +29,7 @@ allow methods (GET, POST, DELETE)
 autoindex (on, off)
 default_index_page_path
 return path (301)
-cgi path
+cgi-path
 default_root represents the domain.
 
 autoindex displays all files and directories in server's root_path + default_root_path.
@@ -38,7 +38,7 @@ return path redirects to the location block with the corresponding default_root_
 
 default_index_page_path is used as root_path + default_index_page_path.
 
-cgi path opens a window with CGI functionality, appended to root_path.
+cgi-path opens a window with CGI functionality, appended to root_path.
 
 Multiple servers can be launched using different ports. Access through a web browser by entering localhost:port/desired_location_root in the address bar.
 
