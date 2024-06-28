@@ -12,6 +12,7 @@ public:
   fstream &GetFile();
   ~FileStream();
   void SetFile(std::string path);
+  void Close();
   bool ExistFile();
   bool IsEof();
   string GetLine();

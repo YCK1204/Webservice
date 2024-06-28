@@ -16,3 +16,7 @@ string FileStream::GetLine() {
 }
 
 bool FileStream::IsEof() { return file.eof(); }
+
+void FileStream::Close() {
+  file.close();
+}

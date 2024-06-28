@@ -15,12 +15,7 @@ private:
   void UpdateResponseState();
   void SetBodyData(size_t firstEofPos);
   void WriteResponse(string msg, string content);
-
-  string SignUp(map<string, string> postData);
-
-  string SignIn(map<string, string> postData);
-
-  string SignOut(map<string, string> postData);
+  
   string GetRoot();
   string HandlePost();
   string BuildContent();

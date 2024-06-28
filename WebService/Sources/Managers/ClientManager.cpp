@@ -1,7 +1,7 @@
 #include "../../Headers/Managers/ClientManager.hpp"
 #include "../../Headers/Contents/Http.hpp"
 
-int ClientManager::GetMostFdOfClients() {
+int ClientManager::GetMostOfClientFd() {
   vector<Client> &clients = Manager::Client.clients;
   int ret = 0;
 
@@ -21,8 +21,26 @@ void ClientManager::OnConnect(int fd) {
   ClientManager::clients.push_back(client);
 
   maxFd = (fd > maxFd) ? fd : maxFd;
-  FD_SET(fd, &event);
   fcntl(fd, F_SETFL, O_NONBLOCK);
+  FD_SET(fd, &event);
+}
+
+void ClientManager::OnDisConnect(int fd) {
+  size_t idx = FindClientIndex(fd);
+  vector<Client> &clients = Manager::Client.clients;
+  if (idx == clients.size()) {
+    return;
+  }
+
+  clients.erase(clients.begin() + idx);
+  int _maxFd = GetMostOfClientFd();
+
+  if (_maxFd == 0)
+    maxFd = http.GetServer().size() + 2;
+  else
+    maxFd = _maxFd;
+  FD_CLR(fd, &event);
+  close(fd);
 }
 
 void ClientManager::UpdateState(fd_set &readEvent, fd_set &errorEvent) {
@@ -49,24 +67,6 @@ int ClientManager::FindClientIndex(int fd) {
   return cnt;
 }
 
-void ClientManager::OnDisConnect(int fd) {
-  size_t idx = FindClientIndex(fd);
-  vector<Client> &clients = Manager::Client.clients;
-  if (idx == clients.size()) {
-    return;
-  }
-
-  clients.erase(clients.begin() + idx);
-  int _maxFd = GetMostFdOfClients();
-
-  if (_maxFd == 0)
-    maxFd = http.GetServer().size() + 2;
-  else
-    maxFd = _maxFd;
-  FD_CLR(fd, &event);
-  close(fd);
-}
-
 void ClientManager::Update() {
   vector<Client> &clients = Manager::Client.clients;
 
@@ -75,7 +75,6 @@ void ClientManager::Update() {
 
     switch (state) {
     case ERROR:
-
       clients[i].UpdateError();
       break;
     case READ:
@@ -83,7 +82,7 @@ void ClientManager::Update() {
       break;
     case WRITE:
       clients[i].UpdateWrite();
-      OnDisConnect(clients[i].data.fd);
+      // OnDisConnect(clients[i].data.fd);
       break;
     case NONE:
       break;

@@ -1,5 +1,7 @@
 #include "../../Headers/Contents/Http.hpp"
 #include "../../Headers/Utils/Util.hpp"
+#include <vector>
+#include <algorithm>
 
 vector<Client> ClientManager::clients;
 map<string, string> ResponseManager::type;
@@ -49,6 +51,9 @@ void Http::StartWebService(const string confPath) {
   } else {
     FT_THROW("Is not exist config file (" + confPath + ")", ERR_CONF);
   }
+
+  file.Close();
+  
   if (servers.size() > 0) {
     SetServers();
     RunServers();
@@ -128,20 +133,35 @@ void Http::HandleErrEvent(int fd) {
   }
 }
 
+bool ExistClient(int fd) {
+
+  vector<Client> cs = Manager::Client.clients;
+
+  for (size_t i = 0; i < cs.size(); i++) {
+    if (cs[i].data.fd == fd) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void Http::HandleReadEvent(int fd) {
   bool isConnecting = false;
   int servSock = 0;
 
-  for (vector<Server>::iterator it = servers.begin(); it != servers.end();
-       it++) {
-    if (it->GetSocket() == fd) {
-      isConnecting = true;
-      servSock = it->GetSocket();
-      break;
-    }
-  }
+  if (ExistClient(fd))
+      return;
 
-  if (isConnecting) {
+    for (vector<Server>::iterator it = servers.begin(); it != servers.end();
+         it++) {
+      if (it->GetSocket() == fd) {
+        isConnecting = true;
+        servSock = it->GetSocket();
+        break;
+      }
+    }
+
+  if (isConnecting == true) {
     int clientSock = accept(servSock, NULL, NULL);
     if (clientSock < 0)
       FT_THROW(IntToString(GetServer(servSock).GetPort()) +
