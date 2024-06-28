@@ -25,11 +25,9 @@ void Client::UpdateRead() {
         if (requestData.total.find("\r\n\r\n",
                                    blankLinePos + 1 != string::npos)) {
           data.state = WRITE;
-          Manager::Client.OnRead(sizeof(requestData.total), data.fd);
         }
       } else {
         data.state = WRITE;
-        Manager::Client.OnRead(sizeof(requestData.total), data.fd);
       }
     }
   }

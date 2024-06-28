@@ -32,7 +32,6 @@ void Client::WriteResponse(string msg, string content) {
   }
 
   data.state = READ;
-  Manager::Client.OnWrite(sizeof(msg) + sizeof(content), data.fd);
   
   DataClear();
 }

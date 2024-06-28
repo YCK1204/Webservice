@@ -11,8 +11,6 @@ public:
   static vector<Client> clients;
   static void OnConnect(int fd);
   static void OnDisConnect(int fd);
-  static void OnRead(int numOfByte, int fd);
-  static void OnWrite(int numOfByte, int fd);
   static void Update();
   static void UpdateState(fd_set &readEvent, fd_set &errorEvent);
   static void CheckTimeOut();
